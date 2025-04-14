@@ -32,7 +32,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             
             // 延迟跳转到首页
             setTimeout(() => {
-                window.location.href = '/user/index.html';  // 跳转到用户首页
+                window.location.href = '/user/index.html';  // 修改为正确的路径
             }, 1500);
         } else {
             showAlert(data.message || '登录失败，请检查用户名和密码', 'danger');

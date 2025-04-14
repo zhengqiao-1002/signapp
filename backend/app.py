@@ -55,7 +55,7 @@ db.init_app(app)
 jwt = JWTManager(app)
 
 # 导入模型
-from models import User, Sign, SignCategory, VisitLog
+from models import User, Sign, SignCategory, VisitLog, Favorite
 
 # 请求中间件，记录所有访问
 @app.before_request
@@ -93,6 +93,21 @@ def user_register_page():
 @app.route('/user/index.html')
 def user_index():
     return send_from_directory('../front/html/user', 'index.html')
+
+# 手语参考页面
+@app.route('/user/reference.html')
+def user_reference():
+    return send_from_directory('../front/html/user', 'reference.html')
+
+# 关于页面
+@app.route('/user/about.html')
+def user_about():
+    return send_from_directory('../front/html/user', 'about.html')
+
+# 个人中心页面
+@app.route('/user/profile.html')
+def user_profile_page():
+    return send_from_directory('../front/html/user', 'profile.html')
 
 # 管理员登录页面
 @app.route('/admin/login.html')
@@ -453,9 +468,17 @@ def manage_user(user_id):
         return jsonify({'message': '操作失败'}), 500
 
 # 用户端静态文件路由
-@app.route('/js/user/<path:filename>')
-def user_static(filename):
+@app.route('/front/html/user/<path:filename>')
+def user_html(filename):
+    return send_from_directory('../front/html/user', filename)
+
+@app.route('/front/js/user/<path:filename>')
+def user_js(filename):
     return send_from_directory('../front/js/user', filename)
+
+@app.route('/front/css/<path:filename>')
+def css_files(filename):
+    return send_from_directory('../front/css', filename)
 
 # 管理员端静态文件路由
 @app.route('/js/admin/<path:filename>')
@@ -543,6 +566,277 @@ def user_login():
         
     except Exception as e:
         print(f"用户登录过程中出现错误: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 用户资料API
+@app.route('/api/user/profile', methods=['GET', 'PUT'])
+@jwt_required()
+def user_profile_api():
+    try:
+        # 获取当前用户
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+        
+        if request.method == 'GET':
+            return jsonify({
+                'username': user.username,
+                'email': user.email,
+                'user_type': user.user_type,
+                'created_at': user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else None
+            })
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            if not data:
+                return jsonify({'message': '没有提供数据'}), 400
+            
+            # 更新用户资料
+            if 'username' in data:
+                # 检查新用户名是否已存在
+                existing_user = User.query.filter_by(username=data['username']).first()
+                if existing_user and existing_user.id != user.id:
+                    return jsonify({'message': '用户名已存在'}), 400
+                user.username = data['username']
+            
+            if 'email' in data:
+                # 检查新邮箱是否已存在
+                existing_user = User.query.filter_by(email=data['email']).first()
+                if existing_user and existing_user.id != user.id:
+                    return jsonify({'message': '邮箱已存在'}), 400
+                user.email = data['email']
+            
+            if 'password' in data and data['password']:
+                # 更新密码
+                hashed_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
+                user.password_hash = hashed_password.decode('utf-8')
+            
+            db.session.commit()
+            return jsonify({'message': '资料更新成功'})
+    
+    except Exception as e:
+        print(f"处理用户资料时出错: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 用户学习统计API
+@app.route('/api/user/stats', methods=['GET'])
+@jwt_required()
+def user_stats():
+    try:
+        # 获取当前用户
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+        
+        # 获取用户的学习统计
+        # TODO: 实现实际的学习统计逻辑
+        # 这里暂时返回模拟数据
+        return jsonify({
+            'totalSigns': 0,  # 已学手语数
+            'favoriteSigns': 0,  # 收藏数
+            'learningDays': 0  # 学习天数
+        })
+    
+    except Exception as e:
+        print(f"获取用户统计时出错: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 用户最近学习记录API
+@app.route('/api/user/recent-signs', methods=['GET'])
+@jwt_required()
+def user_recent_signs():
+    try:
+        # 获取当前用户
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+        
+        # 获取用户最近学习的手语
+        # TODO: 实现实际的学习记录逻辑
+        # 这里暂时返回模拟数据
+        return jsonify([])
+    
+    except Exception as e:
+        print(f"获取最近学习记录时出错: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 获取分类列表（用户端）
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    try:
+        categories = SignCategory.query.all()
+        return jsonify([{
+            'id': category.id,
+            'name': category.name,
+            'description': category.description
+        } for category in categories])
+    except Exception as e:
+        print(f"获取分类列表时出错: {str(e)}")
+        return jsonify({'message': '获取分类列表失败'}), 500
+
+# 获取用户收藏列表
+@app.route('/api/user/favorites', methods=['GET'])
+@jwt_required()
+def get_user_favorites():
+    try:
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+            
+        # 从favorites表中获取用户的收藏
+        favorites = db.session.query(Sign).join(
+            Favorite, Sign.id == Favorite.sign_id
+        ).filter(
+            Favorite.user_id == user.id
+        ).all()
+        
+        return jsonify([{
+            'id': sign.id,
+            'keyword': sign.keyword,
+            'category': sign.category,
+            'video_url': sign.video_url,
+            'description': sign.description
+        } for sign in favorites])
+    except Exception as e:
+        print(f"获取用户收藏列表时出错: {str(e)}")
+        return jsonify({'message': '获取收藏列表失败'}), 500
+
+# 添加收藏
+@app.route('/api/user/favorites/<int:sign_id>', methods=['POST'])
+@jwt_required()
+def add_favorite(sign_id):
+    try:
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+            
+        # 检查手语是否存在
+        sign = Sign.query.get(sign_id)
+        if not sign:
+            return jsonify({'message': '手语不存在'}), 404
+            
+        # 检查是否已经收藏
+        existing_favorite = Favorite.query.filter_by(
+            user_id=user.id,
+            sign_id=sign_id
+        ).first()
+        
+        if existing_favorite:
+            return jsonify({'message': '已经收藏过了'}), 400
+            
+        # 添加收藏
+        new_favorite = Favorite(user_id=user.id, sign_id=sign_id)
+        db.session.add(new_favorite)
+        db.session.commit()
+        
+        return jsonify({'message': '收藏成功'}), 201
+    except Exception as e:
+        print(f"添加收藏时出错: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': '添加收藏失败'}), 500
+
+# 取消收藏
+@app.route('/api/user/favorites/<int:sign_id>', methods=['DELETE'])
+@jwt_required()
+def remove_favorite(sign_id):
+    try:
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+            
+        # 删除收藏记录
+        favorite = Favorite.query.filter_by(
+            user_id=user.id,
+            sign_id=sign_id
+        ).first()
+        
+        if not favorite:
+            return jsonify({'message': '未找到收藏记录'}), 404
+            
+        db.session.delete(favorite)
+        db.session.commit()
+        
+        return jsonify({'message': '取消收藏成功'})
+    except Exception as e:
+        print(f"取消收藏时出错: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': '取消收藏失败'}), 500
+
+# 添加静态文件路由
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    return send_from_directory('../front/css', filename)
+
+@app.route('/js/user/<path:filename>')
+def serve_user_js(filename):
+    return send_from_directory('../front/js/user', filename)
+
+@app.route('/js/admin/<path:filename>')
+def serve_admin_js(filename):
+    return send_from_directory('../front/js/admin', filename)
+
+# 搜索手语关键词
+@app.route('/api/signs/search', methods=['GET'])
+@jwt_required()
+def search_signs():
+    try:
+        keyword = request.args.get('keyword', '')
+        if not keyword:
+            return jsonify({'message': '请提供搜索关键词'}), 400
+            
+        # 使用模糊匹配搜索
+        signs = Sign.query.filter(
+            Sign.keyword.like(f'%{keyword}%')
+        ).all()
+        
+        # 如果没有找到匹配的手语
+        if not signs:
+            return jsonify({
+                'message': '当前手语暂未录入系统，我们会尽快更新',
+                'signs': []
+            }), 200  # 返回200而不是404，因为这是预期的情况
+        
+        return jsonify({
+            'signs': [{
+                'id': sign.id,
+                'text': sign.keyword,
+                'category': sign.category,
+                'description': sign.description
+            } for sign in signs]
+        })
+        
+    except Exception as e:
+        print(f"搜索手语时出错: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 获取手语视频
+@app.route('/api/signs/<int:sign_id>/video', methods=['GET'])
+@jwt_required()
+def get_sign_video(sign_id):
+    try:
+        sign = Sign.query.get_or_404(sign_id)
+        if not sign.video_url:
+            return jsonify({'message': '该手语暂无视频'}), 404
+            
+        return jsonify({
+            'videoUrl': sign.video_url
+        })
+        
+    except Exception as e:
+        print(f"获取视频时出错: {str(e)}")
         return jsonify({'message': '服务器内部错误'}), 500
 
 if __name__ == '__main__':

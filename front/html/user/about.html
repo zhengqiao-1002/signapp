@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <title>关于 - 星语桥</title>
+    <link rel="stylesheet" href="/css/user.css" />
+    <link rel="stylesheet" href="/css/about.css" />
+  </head>
+  <body>
+    <nav>
+      <div class="nav-links">
+        <a href="/user/index.html">首页</a>
+        <a href="/user/reference.html">手语参考</a>
+        <a href="/user/profile.html">我的</a>
+        <a href="/user/about.html">关于</a>
+      </div>
+      <div class="user-info">
+        <span id="username"></span>
+        <a href="javascript:void(0)" onclick="logout()">退出</a>
+      </div>
+    </nav>
+
+    <div class="logo-container">
+      <h1>关于星语桥</h1>
+    </div>
+
+    <div class="about-container">
+      <div class="about-section">
+        <h2>系统简介</h2>
+        <p>
+          星语桥是一个基于人工智能的手语学习平台，旨在帮助用户更好地学习和理解手语。通过先进的计算机视觉技术，我们能够实时识别用户的手语动作，并提供即时反馈。
+        </p>
+      </div>
+
+      <div class="about-section">
+        <h2>核心功能</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <h3>手语识别</h3>
+            <p>
+              通过摄像头实时识别用户的手语动作，支持多种常用手语词汇的识别。
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3>语音转换</h3>
+            <p>支持语音输入转换为文字，方便听障用户理解他人的语音内容。</p>
+          </div>
+          <div class="feature-card">
+            <h3>手语参考库</h3>
+            <p>提供丰富的手语视频资料，按类别整理，方便用户学习和查询。</p>
+          </div>
+          <div class="feature-card">
+            <h3>个性化学习</h3>
+            <p>
+              根据用户的学习历史和使用频率，自动收藏常用手语，打造个性化学习体验。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <h2>技术栈</h2>
+        <div class="tech-stack">
+          <div class="tech-item">
+            <h3>前端技术</h3>
+            <ul>
+              <li>HTML5 / CSS3</li>
+              <li>JavaScript (ES6+)</li>
+              <li>WebRTC (视频处理)</li>
+              <li>MediaRecorder API (语音录制)</li>
+            </ul>
+          </div>
+          <div class="tech-item">
+            <h3>后端技术</h3>
+            <ul>
+              <li>Python</li>
+              <li>Flask 框架</li>
+              <li>SQLAlchemy ORM</li>
+              <li>JWT 认证</li>
+            </ul>
+          </div>
+          <div class="tech-item">
+            <h3>AI 技术</h3>
+            <ul>
+              <li>TensorFlow / MediaPipe</li>
+              <li>计算机视觉</li>
+              <li>语音识别</li>
+              <li>深度学习模型</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/user/about.js"></script>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>手语参考 - 手语学习平台</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/reference.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-brand">手语学习平台</div>
+      <div class="nav-links">
+        <a href="/user/index.html">首页</a>
+        <a href="/user/reference.html" class="active">手语参考</a>
+        <a href="/user/about.html">关于</a>
+        <a href="/user/profile.html">个人中心</a>
+      </div>
+      <div class="nav-user">
+        <span id="username"></span>
+        <button onclick="logout()">退出</button>
+      </div>
+    </nav>
+
+    <div class="reference-container">
+      <div class="category-list">
+        <div class="category-title">手语分类</div>
+        <ul id="categoryList">
+          <li data-category="人物关系" class="active">人物关系</li>
+          <li data-category="职业名称">职业名称</li>
+          <li data-category="基础数字">基础数字</li>
+          <li data-category="时间日期">时间日期</li>
+          <li data-category="常见食物">常见食物</li>
+          <li data-category="公共场所">公共场所</li>
+          <li data-category="交通出行">交通出行</li>
+          <li data-category="自然景观">自然景观</li>
+          <li data-category="日常用语">日常用语</li>
+          <li data-category="颜色类">颜色类</li>
+          <li data-category="动作行为">动作行为</li>
+        </ul>
+      </div>
+
+      <div class="content-area">
+        <div class="category-title">
+          <span id="currentCategory">人物关系</span>
+        </div>
+        <div id="signsList" class="signs-grid">
+          <!-- 手语列表将通过 JavaScript 动态加载 -->
+        </div>
+      </div>
+
+      <div class="detail-area">
+        <div class="detail-header">
+          <h2 id="signWord">选择手语</h2>
+        </div>
+        <div class="detail-content">
+          <div id="signDescription" class="description">
+            请从左侧选择要学习的手语
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/user/reference.js"></script>
+  </body>
+</html>

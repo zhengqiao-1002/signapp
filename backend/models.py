@@ -47,3 +47,19 @@ class VisitLog(db.Model):
     visit_time = db.Column(db.DateTime, default=datetime.utcnow)
     ip_address = db.Column(db.String(50))  # 记录访问IP
     visit_page = db.Column(db.String(100))  # 记录访问的页面 
+
+class Favorite(db.Model):
+    """用户收藏的手语"""
+    __tablename__ = 'favorites'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sign_id = db.Column(db.Integer, db.ForeignKey('signs.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # 建立与User和Sign模型的关系
+    user = db.relationship('User', backref=db.backref('favorites', lazy=True))
+    sign = db.relationship('Sign', backref=db.backref('favorited_by', lazy=True))
+
+    def __repr__(self):
+        return f'<Favorite {self.user_id}-{self.sign_id}>' 
