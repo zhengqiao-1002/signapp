@@ -26,13 +26,14 @@ def reset_counter_if_needed():
 load_dotenv()
 
 # 配置Flask应用
-app = Flask(__name__)
-
-# 配置静态文件路径
-app.static_folder = '../front'  # 设置静态文件夹路径
-app.static_url_path = '/static'  # 设置静态文件URL前缀
-
-CORS(app)
+app = Flask(__name__, static_folder='../front', static_url_path='')
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # 配置最大文件上传大小为 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB in bytes
@@ -69,61 +70,39 @@ def log_request():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# 根路由
+# 根路由重定向到用户登录页面
 @app.route('/')
-def index():
-    return send_from_directory('../front/html/user', 'index.html')
+def root():
+    return send_from_directory('../front/html/user', 'login.html')
+
+# 用户登录页面 - 支持多种URL格式
+@app.route('/user/login.html')
+@app.route('/user/login')
+def user_login_page():
+    return send_from_directory('../front/html/user', 'login.html')
+
+# 用户注册页面 - 支持多种URL格式
+@app.route('/user/register.html')
+@app.route('/user/register')
+@app.route('/register.html')
+@app.route('/register')
+def user_register_page():
+    return send_from_directory('../front/html/user', 'register.html')
 
 # 用户首页
-@app.route('/index.html')
+@app.route('/user/index.html')
 def user_index():
     return send_from_directory('../front/html/user', 'index.html')
 
 # 管理员登录页面
-@app.route('/admin/login')
+@app.route('/admin/login.html')
 def admin_login_page():
     return send_from_directory('../front/html/admin', 'login.html')
 
 # 管理员仪表盘页面
-@app.route('/admin/dashboard')
+@app.route('/admin/dashboard.html')
 def admin_dashboard_page():
     return send_from_directory('../front/html/admin', 'dashboard.html')
-
-# 管理员登录API
-@app.route('/api/admin/login', methods=['POST'])
-def admin_login():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'message': 'No data provided'}), 400
-        
-        username = data.get('username')
-        password = data.get('password')
-        
-        if not username or not password:
-            return jsonify({'message': 'Username and password are required'}), 400
-        
-        user = User.query.filter_by(username=username, user_type='admin').first()
-        if not user:
-            return jsonify({'message': 'Invalid credentials'}), 401
-        
-        if user.check_password(password):
-            access_token = create_access_token(identity=username)
-            return jsonify({
-                'token': access_token,
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'user_type': user.user_type
-                }
-            }), 200
-        
-        return jsonify({'message': 'Invalid credentials'}), 401
-        
-    except Exception as e:
-        print(f"管理员登录过程中出现错误: {str(e)}")
-        return jsonify({'message': 'Internal server error'}), 500
 
 # 获取统计数据
 @app.route('/api/admin/statistics', methods=['GET'])
@@ -386,18 +365,6 @@ def user_register():
         db.session.rollback()
         return jsonify({'message': 'Internal server error'}), 500
 
-# 用户登录页面
-@app.route('/user/login')
-@app.route('/user/login.html')
-def user_login_page():
-    return send_from_directory('../front/html/user', 'login.html')
-
-# 用户注册页面
-@app.route('/user/register')
-@app.route('/user/register.html')
-def user_register_page():
-    return send_from_directory('../front/html/user', 'register.html')
-
 # 用户仪表盘页面
 @app.route('/user/dashboard')
 def user_dashboard_page():
@@ -499,6 +466,45 @@ def admin_static(filename):
 @app.route('/css/<path:filename>')
 def css_static(filename):
     return send_from_directory('../front/css', filename)
+
+# 管理员登录API
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': '请提供登录信息'}), 400
+        
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'message': '用户名和密码不能为空'}), 400
+        
+        # 查找管理员用户
+        user = User.query.filter_by(username=username).first()
+        if not user or user.user_type != 'admin':
+            return jsonify({'message': '用户名或密码错误'}), 401
+        
+        # 验证密码
+        if user.check_password(password):
+            # 创建访问令牌
+            access_token = create_access_token(identity=username)
+            return jsonify({
+                'token': access_token,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'user_type': user.user_type
+                }
+            }), 200
+        
+        return jsonify({'message': '用户名或密码错误'}), 401
+        
+    except Exception as e:
+        print(f"管理员登录过程中出现错误: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
 
 # 用户登录API
 @app.route('/api/user/login', methods=['POST'])

@@ -53,20 +53,20 @@ const Auth = {
                 body: JSON.stringify({ username, password })
             });
 
-            const data = await response.json();
-            
-            if (response.ok) {
-                this.setToken(data.token);
-                this.setUserType(data.user.user_type);
-                // 保存用户信息
-                localStorage.setItem('user', JSON.stringify(data.user));
-                return true;
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || '登录失败');
             }
-            
-            return false;
+
+            const data = await response.json();
+            this.setToken(data.token);
+            this.setUserType(data.user.user_type);
+            // 保存用户信息
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return true;
         } catch (error) {
             console.error('Login error:', error);
-            return false;
+            throw error;  // 向上传递错误
         }
     },
 
@@ -74,7 +74,8 @@ const Auth = {
     logout() {
         this.removeToken();
         this.removeUserType();
-        window.location.href = '/admin/login';
+        localStorage.removeItem('user');
+        window.location.href = '/admin/login.html';  // 修改为正确的路径
     },
 
     // 刷新 token

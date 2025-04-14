@@ -1,3 +1,6 @@
+// API基础URL配置
+const API_BASE_URL = 'http://localhost:5000';
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -5,7 +8,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const password = document.getElementById('password').value;
     
     try {
-        const response = await fetch('/api/user/login', {
+        const response = await fetch(`${API_BASE_URL}/api/user/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -29,7 +32,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             
             // 延迟跳转到首页
             setTimeout(() => {
-                window.location.href = '/';  // 跳转到根路径，会自动加载 index.html
+                window.location.href = '/user/index.html';  // 跳转到用户首页
             }, 1500);
         } else {
             showAlert(data.message || '登录失败，请检查用户名和密码', 'danger');
