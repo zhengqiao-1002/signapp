@@ -1,178 +1,149 @@
-# 部署指南
+# 手语学习平台部署指南
 
-## 1. 服务器环境准备
+## 1. 环境准备
 
-### 1.1 安装必要的软件
+### 1.1 Python 环境安装
 
-```bash
-# 更新系统
-sudo apt update
-sudo apt upgrade
+1. 访问 [Python 官网](https://www.python.org/downloads/) 下载 Python 3.11.5
+2. 安装时勾选"Add Python to PATH"
+3. 验证安装：打开命令提示符，输入：
+   ```bash
+   python --version
+   pip --version
+   ```
 
-# 安装必要的包
-sudo apt install python3-pip python3-venv nginx mysql-server
+### 1.2 MySQL 数据库配置（使用宝塔面板）
 
-# 安装 MySQL 开发库
-sudo apt install python3-dev default-libmysqlclient-dev build-essential
-```
+1. 在宝塔面板中找到已安装的 MySQL 5.5.62
+2. 使用 phpMyAdmin 或宝塔面板的数据库管理功能：
+   - 创建新的数据库：`sign_language_db`
+   - 字符集选择：`utf8mb4`
+   - 排序规则：`utf8mb4_unicode_ci`
+3. 记录数据库连接信息：
+   - 主机：localhost
+   - 端口：3306
+   - 用户名：root
+   - 密码：（宝塔面板中设置的密码）
+   - 数据库名：sign_language_db
 
-### 1.2 配置 MySQL
+### 1.3 配置项目存储路径
 
-```bash
-sudo mysql_secure_installation
-```
-
-创建数据库和用户：
-
-```sql
-CREATE DATABASE sign_language_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'signapp'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON sign_language_db.* TO 'signapp'@'localhost';
-FLUSH PRIVILEGES;
-```
+1. 在 D 盘创建项目目录：
+   ```bash
+   D:\SignApp
+   ```
+2. 在 D 盘创建视频存储目录：
+   ```bash
+   D:\SignApp\uploads
+   ```
 
 ## 2. 项目部署
 
-### 2.1 克隆项目
+### 2.1 代码部署
+
+1. 将项目代码复制到 `D:\SignApp` 目录
+2. 修改项目配置：
+
+   - 打开 `backend/config.py`，修改以下配置：
+
+     ```python
+     # 数据库配置（使用宝塔MySQL的密码）
+     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:宝塔MySQL密码@localhost/sign_language_db'
+
+     # 上传文件路径配置
+     UPLOAD_FOLDER = 'D:/SignApp/uploads'
+
+     # 文件大小限制（50MB）
+     MAX_CONTENT_LENGTH = 50 * 1024 * 1024
+     ```
+
+### 2.2 安装依赖
+
+1. 在命令提示符中进入项目目录：
+   ```bash
+   cd D:\SignApp
+   ```
+2. 安装项目依赖：
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### 2.3 初始化数据库
+
+1. 在 Python 交互环境中执行：
+   ```python
+   from app import app, db
+   with app.app_context():
+       db.create_all()
+   ```
+
+### 2.4 配置防火墙
+
+1. 打开 Windows 防火墙设置
+2. 添加入站规则，开放 5000 端口
+3. 在阿里云控制台的安全组中添加规则：
+   - 协议类型：TCP
+   - 端口范围：5000
+   - 授权对象：0.0.0.0/0
+
+## 3. 启动服务
+
+### 3.1 手动启动
 
 ```bash
-git clone https://gitee.com/the-life-godhushu/signapp.git
-cd signapp
+cd D:\SignApp
+python app.py
 ```
 
-### 2.2 设置 Python 虚拟环境
+### 3.2 配置开机自启（可选）
+
+1. 创建启动脚本 `start_server.bat`：
+   ```batch
+   cd /d D:\SignApp
+   python app.py
+   ```
+2. 将脚本快捷方式放入启动文件夹：
+   `C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup`
+
+## 4. 访问测试
+
+1. 本地访问测试：
+
+   - http://localhost:5000
+
+2. 远程访问测试：
+   - http://[服务器公网 IP]:5000
+
+## 5. 注意事项
+
+### 5.1 视频文件管理
+
+- 视频文件存储在 `D:\SignApp\uploads` 目录
+- 单个视频大小限制为 50MB
+- 建议定期备份视频文件
+
+### 5.2 数据库备份
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-cd backend
-pip install -r requirements.txt
+# 使用宝塔面板进行数据库备份
+# 方法1：通过宝塔面板的数据库管理界面进行备份
+# 方法2：使用命令行
+mysqldump -u root -p sign_language_db > backup.sql
+
+# 恢复数据库
+mysql -u root -p sign_language_db < backup.sql
 ```
 
-### 2.3 配置环境变量
+### 5.3 性能优化建议
 
-创建 `.env` 文件：
+1. 定期清理不使用的视频文件
+2. 监控磁盘使用情况
+3. 根据需要调整视频文件大小限制
 
-```
-DB_HOST=localhost
-DB_USER=signapp
-DB_PASSWORD=your_password
-DB_NAME=sign_language_db
-JWT_SECRET_KEY=your_jwt_secret_key
+### 5.4 安全建议
 
-# 阿里云OSS配置
-OSS_ACCESS_KEY_ID=your_access_key_id
-OSS_ACCESS_KEY_SECRET=your_access_key_secret
-OSS_BUCKET_NAME=your_bucket_name
-OSS_ENDPOINT=oss-cn-beijing.aliyuncs.com
-OSS_BUCKET_DOMAIN=your_bucket_domain
-```
-
-### 2.4 配置 Gunicorn
-
-创建 `gunicorn.conf.py`：
-
-```python
-bind = "127.0.0.1:8000"
-workers = 4
-worker_class = "sync"
-worker_connections = 1000
-timeout = 30
-keepalive = 2
-```
-
-### 2.5 配置 Nginx
-
-创建 `/etc/nginx/sites-available/signapp`：
-
-```nginx
-server {
-    listen 80;
-    server_name your_domain.com;
-
-    location / {
-        root /path/to/signapp/front;
-        index index.html;
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-启用站点：
-
-```bash
-sudo ln -s /etc/nginx/sites-available/signapp /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### 2.6 配置 Systemd 服务
-
-创建 `/etc/systemd/system/signapp.service`：
-
-```ini
-[Unit]
-Description=SignApp Gunicorn daemon
-After=network.target
-
-[Service]
-User=www-data
-Group=www-data
-WorkingDirectory=/path/to/signapp/backend
-Environment="PATH=/path/to/signapp/venv/bin"
-ExecStart=/path/to/signapp/venv/bin/gunicorn -c gunicorn.conf.py app:app
-
-[Install]
-WantedBy=multi-user.target
-```
-
-启动服务：
-
-```bash
-sudo systemctl start signapp
-sudo systemctl enable signapp
-```
-
-## 3. 阿里云 OSS 配置
-
-1. 登录阿里云控制台
-2. 创建 OSS Bucket：
-   - 选择合适的地域
-   - 设置访问权限为"公共读"
-   - 开启跨域访问(CORS)设置
-3. 创建 RAM 用户并获取 AccessKey
-4. 配置 Bucket 域名
-
-## 4. 维护说明
-
-### 4.1 日志查看
-
-```bash
-sudo journalctl -u signapp
-sudo tail -f /var/log/nginx/error.log
-```
-
-### 4.2 更新部署
-
-```bash
-cd /path/to/signapp
-git pull
-source venv/bin/activate
-cd backend
-pip install -r requirements.txt
-sudo systemctl restart signapp
-```
-
-### 4.3 备份
-
-定期备份数据库：
-
-```bash
-mysqldump -u signapp -p sign_language_db > backup_$(date +%Y%m%d).sql
-```
+1. 使用宝塔面板的安全设置
+2. 定期更新系统和依赖包
+3. 配置 SSL 证书（如需要）
+4. 限制上传文件类型为视频格式
+5. 定期检查宝塔面板安全日志
