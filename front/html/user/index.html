@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>手语学习平台</title>
+    <title>星语桥·SignFlow</title>
     <link rel="stylesheet" href="/css/common.css" />
     <link rel="stylesheet" href="/css/index.css" />
+    <!-- MediaPipe库 -->
+    <script src="/js/libs/mediapipe/hands.js"></script>
+    <script src="/js/libs/mediapipe/drawing_utils.js"></script>
+    <script src="/js/libs/mediapipe/camera_utils.js"></script>
   </head>
   <body>
     <nav class="navbar">
-      <div class="nav-brand">手语学习平台</div>
+      <div class="nav-brand">星语桥·SignFlow</div>
       <div class="nav-links">
         <a href="/user/index.html" class="active">首页</a>
         <a href="/user/reference.html">手语参考</a>
@@ -55,10 +59,13 @@
           </div>
           <!-- 手语视频播放 -->
           <div id="videoView" class="view-area">
-            <video id="signVideo" controls>
-              <source src="" type="video/mp4" />
-              您的浏览器不支持视频播放
-            </video>
+            <div id="videoContainer" class="video-container">
+              <video id="signVideo" controls>
+                <source src="" type="video/mp4" />
+                您的浏览器不支持视频播放
+              </video>
+              <!-- 视频控制按钮将通过JavaScript动态添加 -->
+            </div>
           </div>
         </div>
       </div>
@@ -81,6 +88,7 @@
       </div>
     </div>
 
+    <script src="/js/user/sign.js"></script>
     <script src="/js/user/index.js"></script>
   </body>
 </html>

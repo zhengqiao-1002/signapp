@@ -71,7 +71,7 @@ function displayKeywords(keywords) {
     }
     
     keywordsList.innerHTML = keywords.map(keyword => `
-        <div class="keyword-item" onclick="playSignVideo('${keyword.id}', '${keyword.text}')">
+        <div class="keyword-item" data-id="${keyword.id}" onclick="playSignVideo('${keyword.id}', '${keyword.text}')">
             ${keyword.text}
         </div>
     `).join('');
@@ -120,11 +120,141 @@ async function playSignVideo(signId, keyword) {
         
         const data = await response.json();
         const video = document.getElementById('signVideo');
+        
+        // 检查视频容器是否包含控制按钮，没有则添加
+        const videoContainer = document.getElementById('videoContainer');
+        if (!document.getElementById('videoControls')) {
+            const controls = document.createElement('div');
+            controls.id = 'videoControls';
+            controls.className = 'video-controls';
+            controls.innerHTML = `
+                <button id="favoriteButton" class="control-btn" title="收藏">❤</button>
+                <button id="completeButton" class="control-btn" title="标记为已学习">✓</button>
+            `;
+            videoContainer.appendChild(controls);
+            
+            // 添加收藏按钮点击事件
+            document.getElementById('favoriteButton').addEventListener('click', () => {
+                toggleFavorite(signId);
+            });
+            
+            // 添加完成学习按钮点击事件
+            document.getElementById('completeButton').addEventListener('click', () => {
+                markAsCompleted(signId);
+            });
+        }
+        
+        // 设置视频源并播放
         video.src = data.videoUrl;
         video.play();
+        
+        // 更新学习进度
+        updateLearningProgress(signId, 'learning');
+        
+        // 检查是否已收藏，更新按钮状态
+        checkFavoriteStatus(signId);
+        
+        // 自动隐藏无视频时的视频区域
+        updateVideoVisibility();
     } catch (error) {
         console.error('播放视频失败:', error);
         alert('视频加载失败，请重试');
+        // 失败时也隐藏视频区域
+        document.getElementById('videoView').style.display = 'none';
+        updateVideoVisibility();
+    }
+}
+
+// 更新学习进度
+async function updateLearningProgress(signId, status) {
+    try {
+        await fetch(`/api/user/learning/${signId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+        });
+    } catch (error) {
+        console.error('更新学习进度失败:', error);
+    }
+}
+
+// 标记为已完成学习
+async function markAsCompleted(signId) {
+    try {
+        await updateLearningProgress(signId, 'completed');
+        const completeButton = document.getElementById('completeButton');
+        completeButton.classList.add('active');
+        completeButton.title = '已学习';
+        alert('已标记为学习完成！');
+    } catch (error) {
+        console.error('标记完成失败:', error);
+    }
+}
+
+// 切换收藏状态
+async function toggleFavorite(signId) {
+    try {
+        const favoriteButton = document.getElementById('favoriteButton');
+        const isFavorited = favoriteButton.classList.contains('active');
+        
+        if (isFavorited) {
+            // 取消收藏
+            await fetch(`/api/user/favorites/${signId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            favoriteButton.classList.remove('active');
+            favoriteButton.title = '收藏';
+            alert('已取消收藏');
+        } else {
+            // 添加收藏
+            await fetch(`/api/user/favorites/${signId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            favoriteButton.classList.add('active');
+            favoriteButton.title = '取消收藏';
+            alert('收藏成功');
+        }
+    } catch (error) {
+        console.error('操作收藏失败:', error);
+        alert('操作失败，请重试');
+    }
+}
+
+// 检查是否已收藏
+async function checkFavoriteStatus(signId) {
+    try {
+        const response = await fetch('/api/user/favorites', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('获取收藏列表失败');
+        }
+        
+        const favorites = await response.json();
+        const isFavorited = favorites.some(item => item.id === parseInt(signId));
+        
+        const favoriteButton = document.getElementById('favoriteButton');
+        if (isFavorited) {
+            favoriteButton.classList.add('active');
+            favoriteButton.title = '取消收藏';
+        } else {
+            favoriteButton.classList.remove('active');
+            favoriteButton.title = '收藏';
+        }
+    } catch (error) {
+        console.error('检查收藏状态失败:', error);
     }
 }
 
@@ -299,6 +429,29 @@ async function startCamera() {
         // 显示摄像头视图
         document.getElementById('videoView').style.display = 'none';
         document.getElementById('cameraView').style.display = 'flex';
+        
+        // 加载并初始化手语识别
+        try {
+            // 启动手语识别
+            if (typeof initHandLandmarker === 'function') {
+                await initHandLandmarker();
+                console.log('手语识别初始化成功');
+                
+                // 开始手部跟踪
+                if (typeof initHandTracking === 'function') {
+                    initHandTracking();
+                    console.log('开始手部跟踪');
+                    
+                    // 显示状态信息
+                    const resultElement = document.getElementById('recognitionResult');
+                    if (resultElement) {
+                        resultElement.textContent = "请做出手语动作...";
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('手语识别初始化失败:', error);
+        }
     } catch (error) {
         console.error('摄像头访问失败:', error);
         alert('无法访问摄像头，请确保已授予权限');
@@ -307,6 +460,11 @@ async function startCamera() {
 
 // 停止摄像头
 async function stopCamera() {
+    // 停止手部跟踪
+    if (typeof stopHandTracking === 'function') {
+        stopHandTracking();
+    }
+    
     if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
@@ -322,8 +480,23 @@ async function stopCamera() {
     isUsingCamera = false;
     
     // 显示视频视图
-    document.getElementById('videoView').style.display = 'flex';
+    document.getElementById('videoView').style.display = 'none'; // 强制隐藏
     document.getElementById('cameraView').style.display = 'none';
+    
+    // 清空识别结果
+    const resultElement = document.getElementById('recognitionResult');
+    if (resultElement) {
+        resultElement.textContent = "";
+    }
+    
+    // 清空匹配列表
+    const keywordsList = document.getElementById('keywordsList');
+    if (keywordsList) {
+        keywordsList.innerHTML = '';
+    }
+    
+    // 也执行一次视频可见性更新
+    updateVideoVisibility();
 }
 
 // 处理摄像头按钮点击
@@ -334,6 +507,81 @@ function handleCameraButton() {
             await stopCamera();
         } else {
             await startCamera();
+        }
+    });
+}
+
+// 加载MediaPipe库
+async function loadMediaPipeLibraries() {
+    return new Promise((resolve, reject) => {
+        // 检查是否已加载
+        if (window.FilesetResolver && window.HandLandmarker && 
+            window.drawConnectors && window.drawLandmarks && window.HAND_CONNECTIONS) {
+            resolve();
+            return;
+        }
+        
+        try {
+            // 改为直接使用更可靠的CDN
+            // 加载MediaPipe绘图工具
+            const drawingUtilsScript = document.createElement('script');
+            drawingUtilsScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1620248257/drawing_utils.js';
+            
+            // 加载手部连接数据
+            const handsScript = document.createElement('script');
+            handsScript.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js';
+            
+            // 创建一个函数来检查所有库是否已加载
+            const checkLibrariesLoaded = () => {
+                if (window.drawConnectors && window.drawLandmarks && window.HAND_CONNECTIONS) {
+                    console.log('MediaPipe基础库加载成功');
+                    
+                    // 使用一个单独的脚本，包含我们自己定义的手部跟踪逻辑
+                    const handTrackingScript = document.createElement('script');
+                    handTrackingScript.src = '/js/user/sign.js';
+                    handTrackingScript.onload = () => {
+                        console.log('手语识别脚本加载成功');
+                        resolve();
+                    };
+                    handTrackingScript.onerror = (e) => {
+                        console.error('加载手语识别脚本失败:', e);
+                        reject(new Error('手语识别脚本加载失败'));
+                    };
+                    document.body.appendChild(handTrackingScript);
+                } else {
+                    // 如果库还未加载完成，等待100ms后再检查
+                    setTimeout(checkLibrariesLoaded, 100);
+                }
+            };
+            
+            // 添加加载事件监听器
+            drawingUtilsScript.onload = () => {
+                console.log('MediaPipe绘图工具加载成功');
+            };
+            
+            handsScript.onload = () => {
+                console.log('MediaPipe手部库加载成功');
+                // 在手部库加载后开始检查所有库是否已加载
+                checkLibrariesLoaded();
+            };
+            
+            // 错误处理
+            drawingUtilsScript.onerror = (e) => {
+                console.error('MediaPipe绘图工具加载失败:', e);
+                reject(new Error('MediaPipe绘图工具加载失败'));
+            };
+            
+            handsScript.onerror = (e) => {
+                console.error('MediaPipe手部库加载失败:', e);
+                reject(new Error('MediaPipe手部库加载失败'));
+            };
+            
+            // 添加到文档中
+            document.head.appendChild(drawingUtilsScript);
+            document.head.appendChild(handsScript);
+        } catch (error) {
+            console.error('加载MediaPipe库过程中发生错误:', error);
+            reject(error);
         }
     });
 }
@@ -353,4 +601,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const textInput = document.getElementById('textInput');
     textInput.addEventListener('blur', handleTextInput);
     textInput.addEventListener('input', handleTextInput);
-}); 
+    
+    // 初始化视频交互组件
+    initVideoInteractions();
+    
+    // 添加全局函数
+    window.initHandLandmarker = window.initHandLandmarker || function() {
+        console.warn('HandLandmarker初始化函数未定义');
+    };
+    
+    window.initHandTracking = window.initHandTracking || function() {
+        console.warn('HandTracking初始化函数未定义');
+    };
+    
+    window.stopHandTracking = window.stopHandTracking || function() {
+        console.warn('HandTracking停止函数未定义');
+    };
+});
+
+// 初始化视频交互组件
+function initVideoInteractions() {
+    // 确保视频容器存在
+    const videoContainer = document.getElementById('videoContainer');
+    if (!videoContainer) {
+        console.warn('视频容器不存在，跳过初始化视频交互组件');
+        return;
+    }
+    
+    // 监听视频结束事件，但不再弹出确认框
+    const signVideo = document.getElementById('signVideo');
+    signVideo.addEventListener('ended', () => {
+        // 视频播放结束，不再显示确认提示
+        // 用户可以通过下方的勾按钮标记为已完成
+        console.log('视频播放完毕，用户可以使用下方勾按钮标记为已学会');
+    });
+}
+
+// 自动隐藏无视频时的视频区域
+function updateVideoVisibility() {
+    const videoView = document.getElementById('videoView');
+    const video = document.getElementById('signVideo');
+    if (video && videoView) {
+        if (!video.src || video.src === window.location.href || video.src === '') {
+            videoView.style.display = 'none';
+        } else {
+            videoView.style.display = 'flex';
+        }
+    }
+}
+
+// 监听视频加载和清空
+const signVideo = document.getElementById('signVideo');
+if (signVideo) {
+    signVideo.addEventListener('emptied', updateVideoVisibility);
+    signVideo.addEventListener('loadeddata', updateVideoVisibility);
+    signVideo.addEventListener('pause', updateVideoVisibility);
+    signVideo.addEventListener('play', updateVideoVisibility);
+}
+// 初始化时也执行一次
+updateVideoVisibility(); 

@@ -101,3 +101,24 @@ SignApp/
 ## 许可证
 
 [MIT License](LICENSE)
+
+## 手语识别 API 配置
+
+本系统现在支持使用豆包 API 进行手语识别。要启用此功能，请按照以下步骤操作：
+
+1. 访问[豆包 AI 开放平台](https://doubao.com)，注册并创建应用获取 API 密钥
+2. 在`.env`文件中添加以下配置：
+   ```
+   DOUBAO_API_KEY=your_api_key_here
+   ```
+3. 重启应用以应用新的配置
+
+如果未配置 API 密钥，系统将自动退回到本地手语识别模式。
+
+## 切换识别模式
+
+您可以在`front/js/user/sign.js`文件中通过修改以下变量切换识别模式：
+
+```javascript
+const USE_API_RECOGNITION = true; // 设置为true使用API识别，设置为false使用本地识别
+```

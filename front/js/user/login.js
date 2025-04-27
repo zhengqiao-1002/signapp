@@ -4,8 +4,14 @@ const API_BASE_URL = 'http://localhost:5000';
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const username = document.getElementById('username').value;
+    const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
+    
+    // 验证输入
+    if (!username || !password) {
+        showAlert('用户名和密码不能为空', 'danger');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_BASE_URL}/api/user/login`, {
@@ -32,13 +38,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             
             // 延迟跳转到首页
             setTimeout(() => {
-                window.location.href = '/user/index.html';  // 修改为正确的路径
+                window.location.href = '/user/index.html';
             }, 1500);
         } else {
             showAlert(data.message || '登录失败，请检查用户名和密码', 'danger');
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Login error:', error);
         showAlert('登录失败，请稍后重试', 'danger');
     }
 });

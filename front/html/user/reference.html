@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>手语参考 - 手语学习平台</title>
+    <title>手语参考 - 星语桥·SignFlow</title>
     <link rel="stylesheet" href="/css/common.css" />
     <link rel="stylesheet" href="/css/reference.css" />
   </head>
   <body>
     <nav class="navbar">
-      <div class="nav-brand">手语学习平台</div>
+      <div class="nav-brand">星语桥·SignFlow</div>
       <div class="nav-links">
         <a href="/user/index.html">首页</a>
         <a href="/user/reference.html" class="active">手语参考</a>
@@ -26,41 +26,86 @@
       <div class="category-list">
         <div class="category-title">手语分类</div>
         <ul id="categoryList">
-          <li data-category="人物关系" class="active">人物关系</li>
-          <li data-category="职业名称">职业名称</li>
-          <li data-category="基础数字">基础数字</li>
-          <li data-category="时间日期">时间日期</li>
-          <li data-category="常见食物">常见食物</li>
-          <li data-category="公共场所">公共场所</li>
-          <li data-category="交通出行">交通出行</li>
-          <li data-category="自然景观">自然景观</li>
-          <li data-category="日常用语">日常用语</li>
-          <li data-category="颜色类">颜色类</li>
-          <li data-category="动作行为">动作行为</li>
+          <!-- 分类将通过JavaScript动态加载 -->
+          <div class="loading">加载中...</div>
         </ul>
       </div>
 
       <div class="content-area">
-        <div class="category-title">
-          <span id="currentCategory">人物关系</span>
+        <div class="content-header">
+          <span id="currentCategory">选择分类</span>
         </div>
-        <div id="signsList" class="signs-grid">
-          <!-- 手语列表将通过 JavaScript 动态加载 -->
-        </div>
-      </div>
-
-      <div class="detail-area">
-        <div class="detail-header">
-          <h2 id="signWord">选择手语</h2>
-        </div>
-        <div class="detail-content">
-          <div id="signDescription" class="description">
-            请从左侧选择要学习的手语
+        <div class="main-content-row">
+          <div class="signs-list-box" id="signsListBox">
+            <div class="signs-list-title">手语选择</div>
+          </div>
+          <div class="detail-area">
+            <div class="detail-header">
+              <h2 id="signWord">选择手语</h2>
+            </div>
+            <div class="detail-content">
+              <div id="signDescription" class="description">
+                请从左侧选择要学习的手语
+              </div>
+            </div>
+          </div>
+          <div class="ai-assistant-container">
+            <div class="ai-assistant-header">星语桥小助手</div>
+            <div id="aiChatHistory" class="ai-chat-history"></div>
+            <div class="ai-chat-input-row">
+              <input
+                id="aiChatInput"
+                class="ai-chat-input"
+                type="text"
+                placeholder="向星语桥小助手提问..."
+              />
+              <button id="aiChatSendBtn" class="ai-chat-send-btn">发送</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <script src="/js/user/reference.js"></script>
+    <!-- 脚本 -->
+    <script src="/js/libs/mediapipe/camera_utils.js"></script>
+    <script src="/js/libs/mediapipe/drawing_utils.js"></script>
+    <script src="/js/libs/mediapipe/hands.js"></script>
+    <script src="/js/user/sign.js"></script>
+    <script>
+      // 页面加载完成后执行
+      document.addEventListener("DOMContentLoaded", function () {
+        // 检查用户登录状态
+        checkUserAuth();
+
+        // 加载手语参考数据
+        if (typeof loadSignReferenceData === "function") {
+          loadSignReferenceData();
+        } else {
+          console.error("loadSignReferenceData函数未定义");
+        }
+      });
+
+      // 检查用户认证状态
+      function checkUserAuth() {
+        const token = localStorage.getItem("token");
+        const username = localStorage.getItem("username");
+
+        if (!token || !username) {
+          // 未登录，跳转到登录页
+          window.location.href = "/user/login.html";
+          return;
+        }
+
+        // 显示用户名
+        document.getElementById("username").textContent = username;
+      }
+
+      // 退出登录
+      function logout() {
+        localStorage.removeItem("token");
+        localStorage.removeItem("username");
+        window.location.href = "/user/login.html";
+      }
+    </script>
   </body>
 </html>

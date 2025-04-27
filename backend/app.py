@@ -7,6 +7,11 @@ from dotenv import load_dotenv
 import bcrypt
 from sqlalchemy import func
 from collections import defaultdict
+import base64
+import requests
+import json
+import io
+from PIL import Image
 
 # 访问计数器
 visit_counter = defaultdict(int)
@@ -24,6 +29,9 @@ def reset_counter_if_needed():
 
 # 加载环境变量
 load_dotenv()
+
+# 直接设置API密钥
+os.environ['DOUBAO_API_KEY'] = 'a07fdff1-e053-4bb3-bea1-906e0a426c80'
 
 # 配置Flask应用
 app = Flask(__name__, static_folder='../front', static_url_path='')
@@ -55,15 +63,45 @@ db.init_app(app)
 jwt = JWTManager(app)
 
 # 导入模型
-from models import User, Sign, SignCategory, VisitLog, Favorite
+from models import User, Sign, SignCategory, VisitLog, Favorite, LearningProgress
 
 # 请求中间件，记录所有访问
 @app.before_request
 def log_request():
     # 忽略静态文件和API请求
     if not request.path.startswith('/static') and not request.path.startswith('/uploads') and not request.path.startswith('/api/'):
+        # 更新内存中的计数器（用于管理员统计）
         reset_counter_if_needed()
         visit_counter[get_today_date()] += 1
+        
+        # 记录访问日志到数据库
+        try:
+            # 尝试获取当前用户ID
+            user_id = None
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                try:
+                    identity = get_jwt_identity()
+                    user = User.query.filter_by(username=identity).first()
+                    if user:
+                        user_id = user.id
+                except:
+                    pass  # 如果token无效，忽略错误
+            
+            # 创建访问日志
+            log = VisitLog(
+                user_id=user_id,
+                visit_time=datetime.utcnow(),
+                ip_address=request.remote_addr,
+                visit_page=request.path
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception as e:
+            print(f"记录访问日志时出错: {str(e)}")
+            db.session.rollback()  # 回滚事务
+            # 即使记录日志失败，也不应影响用户体验，所以这里不抛出异常
 
 # 处理上传的文件
 @app.route('/uploads/<path:filename>')
@@ -634,12 +672,24 @@ def user_stats():
             return jsonify({'message': '用户不存在'}), 404
         
         # 获取用户的学习统计
-        # TODO: 实现实际的学习统计逻辑
-        # 这里暂时返回模拟数据
+        # 1. 计算已学手语数（通过learning_progress表）
+        total_signs = db.session.query(func.count(db.distinct(Sign.id)))\
+            .join(Favorite, Sign.id == Favorite.sign_id)\
+            .filter(Favorite.user_id == user.id)\
+            .scalar() or 0
+            
+        # 2. 计算收藏数
+        favorite_signs = Favorite.query.filter_by(user_id=user.id).count()
+        
+        # 3. 计算学习天数（通过visit_logs表统计不同的日期）
+        learning_days = db.session.query(func.count(func.distinct(func.date(VisitLog.visit_time))))\
+            .filter(VisitLog.user_id == user.id)\
+            .scalar() or 0
+        
         return jsonify({
-            'totalSigns': 0,  # 已学手语数
-            'favoriteSigns': 0,  # 收藏数
-            'learningDays': 0  # 学习天数
+            'total_signs': total_signs,  # 已学手语数
+            'favorite_signs': favorite_signs,  # 收藏数
+            'learning_days': learning_days  # 学习天数
         })
     
     except Exception as e:
@@ -658,10 +708,20 @@ def user_recent_signs():
         if not user:
             return jsonify({'message': '用户不存在'}), 404
         
-        # 获取用户最近学习的手语
-        # TODO: 实现实际的学习记录逻辑
-        # 这里暂时返回模拟数据
-        return jsonify([])
+        # 通过学习进度表查询最近学习的手语
+        # 按last_practiced倒序排列，限制10条
+        recent_signs = db.session.query(Sign, db.func.max(VisitLog.visit_time).label('last_practiced'))\
+            .join(VisitLog, Sign.id == VisitLog.visit_page.contains(f'/sign/'))\
+            .filter(VisitLog.user_id == user.id)\
+            .group_by(Sign.id)\
+            .order_by(db.desc('last_practiced'))\
+            .limit(10).all()
+        
+        return jsonify([{
+            'id': sign.id,
+            'keyword': sign.keyword,
+            'last_practiced': last_practiced.strftime('%Y-%m-%d %H:%M:%S')
+        } for sign, last_practiced in recent_signs])
     
     except Exception as e:
         print(f"获取最近学习记录时出错: {str(e)}")
@@ -669,6 +729,7 @@ def user_recent_signs():
 
 # 获取分类列表（用户端）
 @app.route('/api/categories', methods=['GET'])
+@jwt_required()
 def get_categories():
     try:
         categories = SignCategory.query.all()
@@ -680,6 +741,59 @@ def get_categories():
     except Exception as e:
         print(f"获取分类列表时出错: {str(e)}")
         return jsonify({'message': '获取分类列表失败'}), 500
+
+# 获取手语列表（带分类筛选）
+@app.route('/api/signs', methods=['GET'])
+@jwt_required()
+def get_signs():
+    try:
+        # 获取查询参数
+        category_id = request.args.get('category')
+        keyword = request.args.get('keyword')
+        query = Sign.query
+
+        # 只在有category_id时，先查分类名再查signs
+        if category_id:
+            category_obj = SignCategory.query.filter_by(id=category_id).first()
+            if category_obj:
+                query = query.filter_by(category=category_obj.name)
+            else:
+                # 没有该分类直接返回空
+                return jsonify([])
+
+        if keyword:
+            query = query.filter(Sign.keyword.like(f'%{keyword}%'))
+
+        # 执行查询
+        signs = query.all()
+        return jsonify([{
+            'id': sign.id,
+            'keyword': sign.keyword,
+            'category': sign.category,
+            'video_url': sign.video_url,
+            'description': sign.description
+        } for sign in signs])
+    except Exception as e:
+        print(f"获取手语列表时出错: {str(e)}")
+        return jsonify({'message': '获取手语列表失败'}), 500
+
+# 获取单个手语详情
+@app.route('/api/signs/<int:sign_id>', methods=['GET'])
+@jwt_required()
+def get_sign_detail(sign_id):
+    try:
+        sign = Sign.query.get_or_404(sign_id)
+        
+        return jsonify({
+            'id': sign.id,
+            'keyword': sign.keyword,
+            'category': sign.category,
+            'video_url': sign.video_url,
+            'description': sign.description
+        })
+    except Exception as e:
+        print(f"获取手语详情时出错: {str(e)}")
+        return jsonify({'message': '获取手语详情失败'}), 500
 
 # 获取用户收藏列表
 @app.route('/api/user/favorites', methods=['GET'])
@@ -838,6 +952,231 @@ def get_sign_video(sign_id):
     except Exception as e:
         print(f"获取视频时出错: {str(e)}")
         return jsonify({'message': '服务器内部错误'}), 500
+
+# 获取手语总数
+@app.route('/api/signs/count', methods=['GET'])
+@jwt_required()
+def get_signs_count():
+    try:
+        count = Sign.query.count()
+        return jsonify({
+            'count': count
+        })
+    except Exception as e:
+        print(f"获取手语总数时出错: {str(e)}")
+        return jsonify({'message': '服务器内部错误'}), 500
+
+# 更新学习进度
+@app.route('/api/user/learning/<int:sign_id>', methods=['POST'])
+@jwt_required()
+def update_learning_progress(sign_id):
+    try:
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+            
+        # 检查手语是否存在
+        sign = Sign.query.get(sign_id)
+        if not sign:
+            return jsonify({'message': '手语不存在'}), 404
+        
+        # 获取请求参数
+        data = request.json
+        status = data.get('status', 'learning')  # 默认为"正在学习"
+        
+        # 查询是否已存在学习记录
+        progress = LearningProgress.query.filter_by(
+            user_id=user.id,
+            sign_id=sign_id
+        ).first()
+        
+        if progress:
+            # 更新状态和练习时间
+            progress.status = status
+            progress.last_practiced = datetime.utcnow()
+        else:
+            # 创建新记录
+            progress = LearningProgress(
+                user_id=user.id,
+                sign_id=sign_id,
+                status=status
+            )
+            db.session.add(progress)
+        
+        # 记录访问日志
+        log = VisitLog(
+            user_id=user.id,
+            visit_time=datetime.utcnow(),
+            ip_address=request.remote_addr,
+            visit_page=f'/sign/{sign_id}'
+        )
+        db.session.add(log)
+        
+        db.session.commit()
+        
+        return jsonify({'message': '学习进度已更新'})
+    except Exception as e:
+        print(f"更新学习进度时出错: {str(e)}")
+        db.session.rollback()
+        return jsonify({'message': '更新学习进度失败'}), 500
+
+# 获取学习进度
+@app.route('/api/user/learning', methods=['GET'])
+@jwt_required()
+def get_learning_progress():
+    try:
+        current_user = get_jwt_identity()
+        user = User.query.filter_by(username=current_user).first()
+        
+        if not user:
+            return jsonify({'message': '用户不存在'}), 404
+        
+        # 获取用户的所有学习进度
+        progress_list = db.session.query(
+            LearningProgress, Sign
+        ).join(
+            Sign, LearningProgress.sign_id == Sign.id
+        ).filter(
+            LearningProgress.user_id == user.id
+        ).all()
+        
+        return jsonify([{
+            'id': sign.id,
+            'keyword': sign.keyword,
+            'status': progress.status,
+            'last_practiced': progress.last_practiced.strftime('%Y-%m-%d %H:%M:%S')
+        } for progress, sign in progress_list])
+    except Exception as e:
+        print(f"获取学习进度时出错: {str(e)}")
+        return jsonify({'message': '获取学习进度失败'}), 500
+
+# 手语识别API
+@app.route('/api/sign-recognition', methods=['POST'])
+@jwt_required()
+def sign_recognition():
+    try:
+        # 获取发送的图片数据
+        data = request.get_json()
+        if not data or 'image' not in data:
+            return jsonify({'message': '未提供图片数据'}), 400
+        
+        # 解析base64编码的图片
+        image_data = data['image'].split(',')[1] if ',' in data['image'] else data['image']
+        image_bytes = base64.b64decode(image_data)
+        
+        # 获取API密钥
+        api_key = os.getenv('DOUBAO_API_KEY')
+        if not api_key:
+            return jsonify({'message': '缺少API配置'}), 500
+        
+        # 调用Doubao Vision API
+        response = call_doubao_vision_api(image_bytes, api_key)
+        
+        # 返回识别结果
+        return jsonify(response), 200
+        
+    except Exception as e:
+        print(f"手语识别请求失败: {str(e)}")
+        return jsonify({'message': '手语识别服务暂时不可用'}), 500
+
+def call_doubao_vision_api(image_bytes, api_key):
+    """调用Doubao Vision API进行手语识别"""
+    try:
+        # 准备请求图片数据
+        image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        
+        # API接口地址
+        url = "https://api.doubao.com/v1/vision/analysis"
+        
+        # 准备请求头和请求体
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        payload = {
+            "model": "doubao-1.5-vision-lite", 
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "请识别这张图片中的手语动作，只返回识别结果。如果是数字或常见手语，请告诉我它代表的含义。"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_base64}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        # 发送请求
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        
+        # 解析响应
+        result = response.json()
+        sign_text = extract_sign_recognition(result)
+        
+        return {
+            'success': True,
+            'result': sign_text,
+            'raw_response': result  # 调试用，可以在生产环境中移除
+        }
+        
+    except requests.exceptions.RequestException as e:
+        print(f"API请求失败: {str(e)}")
+        return {
+            'success': False,
+            'error': '无法连接到手语识别服务'
+        }
+    except Exception as e:
+        print(f"手语识别处理失败: {str(e)}")
+        return {
+            'success': False,
+            'error': '手语识别处理出错'
+        }
+
+def extract_sign_recognition(api_response):
+    """从API响应中提取手语识别结果"""
+    try:
+        content = api_response.get('choices', [{}])[0].get('message', {}).get('content', '')
+        
+        # 简单处理，获取识别的文本
+        # 进一步处理逻辑可以根据API返回的实际结构调整
+        
+        return content.strip()
+    except Exception as e:
+        print(f"提取识别结果时出错: {str(e)}")
+        return "无法识别手语"
+
+# 添加 /api/ai-chat 路由，转发前端请求到 https://ark.cn-beijing.volces.com/api/v3/chat/completions，带上 API-KEY，返回原始响应。
+@app.route('/api/ai-chat', methods=['POST'])
+@jwt_required()
+def ai_chat():
+    data = request.get_json()
+    api_key = 'a07fdff1-e053-4bb3-bea1-906e0a426c80'
+    try:
+        resp = requests.post(
+            'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            },
+            json=data,
+            timeout=20
+        )
+        print('AI-CHAT返回内容:', resp.text)
+        return (resp.text, resp.status_code, resp.headers.items())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # 确保上传目录存在

@@ -2,21 +2,26 @@
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <title>关于 - 星语桥</title>
+    <title>关于 - 星语桥·SignFlow</title>
+    <link rel="stylesheet" href="/css/common.css" />
     <link rel="stylesheet" href="/css/user.css" />
     <link rel="stylesheet" href="/css/about.css" />
   </head>
   <body>
-    <nav>
+    <nav
+      class="navbar"
+      style="background: linear-gradient(90deg, #ff7e5f, #feb47b, #a18cd1)"
+    >
+      <div class="nav-brand">星语桥·SignFlow</div>
       <div class="nav-links">
         <a href="/user/index.html">首页</a>
         <a href="/user/reference.html">手语参考</a>
-        <a href="/user/profile.html">我的</a>
-        <a href="/user/about.html">关于</a>
+        <a href="/user/about.html" class="active">关于</a>
+        <a href="/user/profile.html">个人中心</a>
       </div>
-      <div class="user-info">
+      <div class="nav-user">
         <span id="username"></span>
-        <a href="javascript:void(0)" onclick="logout()">退出</a>
+        <button onclick="logout()">退出</button>
       </div>
     </nav>
 

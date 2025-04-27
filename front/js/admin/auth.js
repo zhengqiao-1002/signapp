@@ -1,3 +1,6 @@
+// API基础URL配置
+const API_BASE_URL = 'http://localhost:5000';
+
 // 认证管理模块
 const Auth = {
     // Token 相关操作
@@ -45,28 +48,32 @@ const Auth = {
     // 登录处理
     async login(username, password) {
         try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
+            const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '登录失败');
+                throw new Error(data.message || '登录失败');
             }
 
-            const data = await response.json();
+            // 保存token和用户信息
             this.setToken(data.token);
             this.setUserType(data.user.user_type);
-            // 保存用户信息
-            localStorage.setItem('user', JSON.stringify(data.user));
-            return true;
+            localStorage.setItem('username', data.user.username);
+
+            return data;
         } catch (error) {
             console.error('Login error:', error);
-            throw error;  // 向上传递错误
+            throw error;
         }
     },
 
@@ -74,14 +81,14 @@ const Auth = {
     logout() {
         this.removeToken();
         this.removeUserType();
-        localStorage.removeItem('user');
-        window.location.href = '/admin/login.html';  // 修改为正确的路径
+        localStorage.removeItem('username');
+        window.location.href = '/admin/login.html';
     },
 
     // 刷新 token
     async refreshToken() {
         try {
-            const response = await fetch('http://localhost:5000/api/admin/refresh-token', {
+            const response = await fetch(`${API_BASE_URL}/api/admin/refresh-token`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.getToken()}`

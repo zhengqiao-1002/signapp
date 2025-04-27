@@ -1,4 +1,4 @@
-from app import app, db
+cdfrom app import app, db
 from models import User, SignCategory, Sign
 import bcrypt
 

@@ -1,90 +1,99 @@
 <!DOCTYPE html>
 <html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <title>个人中心 - 星语桥</title>
-    <link rel="stylesheet" href="/css/user.css">
-    <link rel="stylesheet" href="/css/profile.css">
-</head>
-<body>
-    <nav>
-        <div class="nav-links">
-            <a href="/user/index.html">首页</a>
-            <a href="/user/reference.html">手语参考</a>
-            <a href="/user/profile.html">我的</a>
-            <a href="/user/about.html">关于</a>
-        </div>
-        <div class="user-info">
-            <span id="username"></span>
-            <a href="javascript:void(0)" onclick="logout()">退出</a>
-        </div>
+  <head>
+    <meta charset="UTF-8" />
+    <title>个人中心 - 星语桥·SignFlow</title>
+    <link rel="stylesheet" href="/css/common.css" />
+    <link rel="stylesheet" href="/css/user.css" />
+    <link rel="stylesheet" href="/css/profile.css" />
+    <link rel="stylesheet" href="/css/user/profile.css" />
+  </head>
+  <body>
+    <nav
+      class="navbar"
+      style="background: linear-gradient(90deg, #ff7e5f, #feb47b, #a18cd1)"
+    >
+      <div class="nav-brand">星语桥·SignFlow</div>
+      <div class="nav-links">
+        <a href="/user/index.html">首页</a>
+        <a href="/user/reference.html">手语参考</a>
+        <a href="/user/about.html">关于</a>
+        <a href="/user/profile.html" class="active">个人中心</a>
+      </div>
+      <div class="nav-user">
+        <span id="username"></span>
+        <button onclick="logout()">退出</button>
+      </div>
     </nav>
 
     <div class="logo-container">
-        <h1>个人中心</h1>
+      <h1>个人中心</h1>
+      <button id="refreshButton" class="refresh-btn" title="刷新数据">
+        🔄 刷新
+      </button>
     </div>
 
     <div class="profile-container">
-        <div class="profile-section">
-            <div class="user-profile">
-                <h2>个人信息</h2>
-                <div class="profile-info">
-                    <div class="info-item">
-                        <label>用户名</label>
-                        <span id="profileUsername"></span>
-                    </div>
-                    <div class="info-item">
-                        <label>邮箱</label>
-                        <span id="profileEmail"></span>
-                    </div>
-                    <div class="info-item">
-                        <label>注册时间</label>
-                        <span id="profileCreatedAt"></span>
-                    </div>
-                </div>
+      <div class="profile-section">
+        <div class="user-profile">
+          <h2>个人信息</h2>
+          <div class="profile-info">
+            <div class="info-item">
+              <label>用户名</label>
+              <span id="profileUsername"></span>
             </div>
-
-            <div class="learning-stats">
-                <h2>学习统计</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalSigns">0</div>
-                        <div class="stat-label">已学手语</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="favoriteSigns">0</div>
-                        <div class="stat-label">收藏手语</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="learningDays">0</div>
-                        <div class="stat-label">学习天数</div>
-                    </div>
-                </div>
+            <div class="info-item">
+              <label>邮箱</label>
+              <span id="profileEmail"></span>
             </div>
+            <div class="info-item">
+              <label>注册时间</label>
+              <span id="profileCreatedAt"></span>
+            </div>
+          </div>
         </div>
 
-        <div class="favorites-section">
-            <div class="section-header">
-                <h2>收藏的手语</h2>
-                <div class="view-options">
-                    <button class="view-btn active" data-view="grid">网格视图</button>
-                    <button class="view-btn" data-view="list">列表视图</button>
-                </div>
+        <div class="learning-stats">
+          <h2>学习统计</h2>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="totalSigns">0</div>
+              <div class="stat-label">已学手语</div>
             </div>
-            
-            <div class="favorites-container grid-view" id="favoritesContainer">
-                <!-- 收藏的手语将通过 JavaScript 动态加载 -->
+            <div class="stat-card">
+              <div class="stat-value" id="favoriteSigns">0</div>
+              <div class="stat-label">收藏手语</div>
             </div>
+            <div class="stat-card">
+              <div class="stat-value" id="learningDays">0</div>
+              <div class="stat-label">学习天数</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="favorites-section">
+        <div class="section-header">
+          <h2>收藏的手语</h2>
+          <div class="view-options">
+            <button class="view-btn active" data-view="grid">网格视图</button>
+            <button class="view-btn" data-view="list">列表视图</button>
+          </div>
         </div>
 
-        <div class="recent-section">
-            <h2>最近学习</h2>
-            <div class="recent-signs" id="recentSigns">
-                <!-- 最近学习的手语将通过 JavaScript 动态加载 -->
-            </div>
+        <div class="favorites-container grid-view" id="favoritesContainer">
+          <!-- 收藏的手语将通过 JavaScript 动态加载 -->
         </div>
+      </div>
+
+      <div class="learning-progress-section">
+        <h2>学习进度</h2>
+        <div class="learning-progress" id="learningProgress">
+          <!-- 学习进度将通过 JavaScript 动态加载 -->
+        </div>
+      </div>
     </div>
 
     <script src="/js/user/profile.js"></script>
-</body>
-</html> 
+  </body>
+</html>

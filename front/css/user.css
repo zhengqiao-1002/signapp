@@ -15,20 +15,21 @@ nav {
     display: flex;
     justify-content: space-between;
     padding: 12px 40px;
-    background-color: white;
+    background: linear-gradient(90deg, #4a90e2, #5cb3ff, #72d2ff);
     border-bottom: 1px solid #eee;
+    color: white;
 }
 
 .nav-links a {
     margin-right: 30px;
     text-decoration: none;
-    color: #333;
+    color: white;
     font-weight: 500;
     font-size: 14px;
 }
 
 .nav-links a:hover {
-    color: #4a90e2;
+    color: #f0f7ff;
 }
 
 .user-info {
@@ -39,12 +40,12 @@ nav {
 }
 
 .user-info a {
-    color: #666;
+    color: white;
     text-decoration: none;
 }
 
 .user-info a:hover {
-    color: #e74c3c;
+    color: #f0f7ff;
 }
 
 /* Logo样式 */

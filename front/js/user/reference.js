@@ -285,4 +285,34 @@ document.addEventListener('DOMContentLoaded', () => {
     bindCategoryEvents();
     // 默认加载人物关系类别
     loadSignsList('人物关系');
-}); 
+});
+
+function renderSigns(signs) {
+    const listBox = document.getElementById('signsListBox');
+    if (!listBox) {
+        console.error('找不到signsListBox元素');
+        return;
+    }
+    // 清空现有内容
+    listBox.innerHTML = '';
+    if (!signs || signs.length === 0) {
+        listBox.innerHTML = '<div class="sign-item">该分类下暂无手语</div>';
+        return;
+    }
+    // 渲染手语项
+    signs.forEach(sign => {
+        const div = document.createElement('div');
+        div.className = 'sign-item';
+        div.textContent = sign.keyword;
+        div.dataset.id = sign.id;
+        div.onclick = function() {
+            showSignDetail(sign.id);
+        };
+        listBox.appendChild(div);
+    });
+    // 默认选中第一个手语并显示详情
+    if (signs.length > 0) {
+        listBox.firstChild.classList.add('active');
+        showSignDetail(signs[0].id);
+    }
+} 

@@ -1,67 +1,3 @@
-.navbar {
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 0 20px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.nav-brand {
-    font-size: 18px;
-    font-weight: 500;
-    color: #333;
-}
-
-.nav-links {
-    display: flex;
-    gap: 20px;
-}
-
-.nav-links a {
-    color: #666;
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.nav-links a:hover {
-    color: #3b82f6;
-    background: #f0f7ff;
-}
-
-.nav-links a.active {
-    color: #3b82f6;
-    background: #f0f7ff;
-}
-
-.nav-user {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.nav-user span {
-    color: #666;
-}
-
-.nav-user button {
-    padding: 6px 12px;
-    border: 1px solid #3b82f6;
-    border-radius: 4px;
-    background: transparent;
-    color: #3b82f6;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.nav-user button:hover {
-    background: #3b82f6;
-    color: white;
-}
-
 /* 全局样式 */
 * {
     margin: 0;
@@ -69,9 +5,465 @@
     box-sizing: border-box;
 }
 
+:root {
+    --primary-color: #ff7e5f; /* 橙粉渐变起点 */
+    --primary-hover: #feb47b; /* 橙粉渐变终点 */
+    --secondary-color: #fca3cc; /* 粉紫 */
+    --accent-color: #a18cd1; /* 紫色 */
+    --text-primary: #3d2c29;
+    --text-secondary: #7b5e57;
+    --text-light: #bfa6a0;
+    --bg-light: #fff3e6; /* 柔和橙色 */
+    --bg-white: #fff6f0; /* 柔和暖白 */
+    --shadow-sm: 0 2px 8px rgba(255, 126, 95, 0.08);
+    --shadow-md: 0 4px 16px rgba(255, 126, 95, 0.12);
+    --shadow-lg: 0 8px 30px rgba(255, 126, 95, 0.15);
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    
+    /* 背景渐变颜色 */
+    --bg-gradient-1: #ffecd2;
+    --bg-gradient-2: #fcb69f;
+    --bg-gradient-3: #ff7e5f;
+    --bg-gradient-4: #a18cd1;
+}
+
+/* 动态背景 */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    line-height: 1.5;
-    color: #333;
-    background: #f5f7fa;
+    font-family: var(--font-family);
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-size: 16px;
+    position: relative;
+    background: linear-gradient(-45deg, var(--bg-gradient-1), var(--bg-gradient-2), var(--bg-gradient-3), var(--bg-gradient-4));
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+}
+
+@keyframes gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* 手语动画背景元素 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none"><path d="M70,50 C70,40 65,35 60,35 C55,35 50,40 50,45 C50,40 45,35 40,35 C35,35 30,40 30,50" stroke="rgba(67, 97, 238, 0.05)" stroke-width="3" stroke-linecap="round"/></svg>');
+    background-size: 300px 300px;
+    opacity: 0.3;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* 手形图案背景 */
+.bg-hands {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    opacity: 0.04;
+    background-image: 
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100" fill="none"><path d="M30,20 C35,15 40,15 45,20 C50,25 55,25 60,20 C65,15 70,15 75,20" stroke="rgba(76, 201, 240, 0.8)" stroke-width="3" stroke-linecap="round"/><path d="M30,40 C40,35 50,35 55,40 C60,45 65,45 70,40" stroke="rgba(76, 201, 240, 0.8)" stroke-width="3" stroke-linecap="round"/></svg>'),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100" fill="none"><path d="M20,50 C30,40 40,40 50,50 C60,60 70,60 80,50" stroke="rgba(67, 97, 238, 0.8)" stroke-width="3" stroke-linecap="round"/></svg>');
+    background-position: 0 0, 30px 30px;
+    background-size: 300px 300px, 200px 200px;
+    animation: backgroundMove 60s linear infinite;
+}
+
+@keyframes backgroundMove {
+    0% {
+        background-position: 0 0, 30px 30px;
+    }
+    100% {
+        background-position: 300px 300px, 230px 230px;
+    }
+}
+
+/* 浮动手形气泡 */
+.floating-hand {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M50,30 C55,25 60,25 65,30 C70,35 75,35 80,30" stroke="rgba(67, 97, 238, 0.8)" stroke-width="3" stroke-linecap="round"/><path d="M40,40 C45,35 50,35 55,40 C60,45 65,45 70,40" stroke="rgba(76, 201, 240, 0.8)" stroke-width="3" stroke-linecap="round"/><path d="M30,50 C35,45 40,45 45,50 C50,55 55,55 60,50" stroke="rgba(247, 37, 133, 0.8)" stroke-width="3" stroke-linecap="round"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.1;
+    z-index: -1;
+    pointer-events: none;
+}
+
+#floating-hand-1 {
+    top: 10%;
+    left: 5%;
+    animation: float 15s ease-in-out infinite;
+}
+
+#floating-hand-2 {
+    top: 70%;
+    right: 8%;
+    animation: float 18s ease-in-out infinite 2s;
+}
+
+#floating-hand-3 {
+    bottom: 15%;
+    left: 10%;
+    animation: float 20s ease-in-out infinite 1s;
+}
+
+@keyframes float {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    25% {
+        transform: translate(10px, 15px) rotate(5deg) scale(1.05);
+    }
+    50% {
+        transform: translate(20px, 5px) rotate(10deg) scale(1);
+    }
+    75% {
+        transform: translate(5px, 20px) rotate(5deg) scale(0.95);
+    }
+    100% {
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+}
+
+.navbar {
+    background: linear-gradient(90deg, #ff7e5f, #feb47b, #a18cd1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+    padding: 0 32px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 126, 95, 0.1);
+}
+
+.nav-brand {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-brand::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 24px;
+    background: white;
+    margin-right: 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 15px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.nav-links a:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-2px);
+}
+
+.nav-links a.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nav-links a.active::after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.nav-user span {
+    color: white;
+    font-weight: 500;
+    position: relative;
+    padding-left: 24px;
+}
+
+.nav-user span::before {
+    content: "👤";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+}
+
+.nav-user button {
+    padding: 8px 16px;
+    border: 1px solid white;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.nav-user button:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+/* 全局按钮样式 */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #ff7e5f 0%, #feb47b 100%);
+    color: #fff;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s ease;
+}
+
+.btn:hover::before {
+    width: 300%;
+    height: 300%;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: linear-gradient(90deg, #feb47b 0%, #ff7e5f 100%);
+    color: #fff;
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* 全局容器样式 */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 32px;
+    background: rgba(255, 236, 210, 0.85);
+    box-shadow: var(--shadow-md);
+}
+
+/* 全局卡片样式 */
+.card {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    position: relative;
+    background: rgba(255, 236, 210, 0.85);
+    box-shadow: var(--shadow-md);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: 0.6s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card:hover::before {
+    transform: translateX(100%);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-light);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+h1::after, h2::after, h3::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 2px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 16px;
+        height: 60px;
+    }
+    
+    .nav-brand {
+        font-size: 18px;
+    }
+    
+    .nav-links a {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+    
+    .container {
+        padding: 16px;
+    }
+    
+    .bg-hands {
+        opacity: 0.02;
+    }
+}
+
+/* 页面加载动画 */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.page-loader.loaded {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    text-align: center;
+}
+
+.hand-wave {
+    font-size: 48px;
+    animation: handWave 1.5s ease-in-out infinite;
+    display: inline-block;
+    transform-origin: 70% 70%;
+}
+
+@keyframes handWave {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(14deg); }
+    20% { transform: rotate(-8deg); }
+    30% { transform: rotate(14deg); }
+    40% { transform: rotate(-4deg); }
+    50% { transform: rotate(10deg); }
+    60% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
 } 

@@ -62,4 +62,22 @@ class Favorite(db.Model):
     sign = db.relationship('Sign', backref=db.backref('favorited_by', lazy=True))
 
     def __repr__(self):
-        return f'<Favorite {self.user_id}-{self.sign_id}>' 
+        return f'<Favorite {self.user_id}-{self.sign_id}>'
+        
+class LearningProgress(db.Model):
+    """用户学习进度"""
+    __tablename__ = 'learning_progress'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    sign_id = db.Column(db.Integer, db.ForeignKey('signs.id'), nullable=False)
+    status = db.Column(Enum('not_started', 'learning', 'completed', name='learning_status'), default='not_started')
+    last_practiced = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 建立与User和Sign模型的关系
+    user = db.relationship('User', backref=db.backref('learning_progress', lazy=True))
+    sign = db.relationship('Sign', backref=db.backref('learned_by', lazy=True))
+    
+    def __repr__(self):
+        return f'<LearningProgress {self.user_id}-{self.sign_id}: {self.status}>' 
