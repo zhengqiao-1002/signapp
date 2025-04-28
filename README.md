@@ -30,7 +30,7 @@
 - **数据库**：MySQL
 - **前端**：HTML5、CSS3、JavaScript (ES6+)、Bootstrap
 - **AI/识别**：MediaPipe、TensorFlow、豆包 API、WebRTC、MediaRecorder
-- **其它**：Docker（可选）、环境变量管理、RESTful API
+
 
 ---
 
