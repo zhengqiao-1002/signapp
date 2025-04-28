@@ -39,7 +39,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone [你的Gitee仓库地址]
+git clone [[你的Gitee仓库地址]](https://github.com/zhengqiao-1002/signapp)
 cd SignApp
 ```
 
